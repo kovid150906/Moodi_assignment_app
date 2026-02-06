@@ -18,38 +18,53 @@ class EventCategoriesSection extends StatelessWidget {
         children: [
           _buildSectionHeader(isDark),
           const SizedBox(height: 16),
-          // 2-column grid of category cards
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AnimationLimiter(
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.1,
-                ),
-                itemCount: MoodiData.categories.length,
-                itemBuilder: (context, index) {
-                  return AnimationConfiguration.staggeredGrid(
-                    position: index,
-                    columnCount: 2,
-                    duration: const Duration(milliseconds: 500),
-                    child: ScaleAnimation(
-                      child: FadeInAnimation(
-                        child: _CategoryCard(
-                          category: MoodiData.categories[index],
-                          index: index,
-                          isDark: isDark,
-                        ),
-                      ),
+          // Responsive grid of category cards
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = constraints.maxWidth;
+              // Determine column count based on screen width
+              int crossAxisCount = 2;
+              if (screenWidth >= 1400) {
+                crossAxisCount = 5;
+              } else if (screenWidth >= 1000) {
+                crossAxisCount = 4;
+              } else if (screenWidth >= 700) {
+                crossAxisCount = 3;
+              }
+              
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: AnimationLimiter(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.1,
                     ),
-                  );
-                },
-              ),
-            ),
+                    itemCount: MoodiData.categories.length,
+                    itemBuilder: (context, index) {
+                      return AnimationConfiguration.staggeredGrid(
+                        position: index,
+                        columnCount: crossAxisCount,
+                        duration: const Duration(milliseconds: 500),
+                        child: ScaleAnimation(
+                          child: FadeInAnimation(
+                            child: _CategoryCard(
+                              category: MoodiData.categories[index],
+                              index: index,
+                              isDark: isDark,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

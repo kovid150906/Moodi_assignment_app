@@ -14,8 +14,9 @@ class DidYouKnowSection extends StatefulWidget {
 }
 
 class _DidYouKnowSectionState extends State<DidYouKnowSection> {
-  final PageController _pageController = PageController();
+  PageController? _pageController;
   int _currentIndex = 0;
+  int _lastCardsPerView = 1;
   Timer? _autoScrollTimer;
 
   // Define colors that adapt to theme
@@ -94,26 +95,44 @@ class _DidYouKnowSectionState extends State<DidYouKnowSection> {
   @override
   void initState() {
     super.initState();
-    _startAutoScroll();
+    // Controller will be initialized in build
+  }
+  
+  void _initializeController(int cardsPerView) {
+    if (_lastCardsPerView == cardsPerView && _pageController != null) return;
+    
+    _stopAutoScroll();
+    _pageController?.dispose();
+    
+    _pageController = PageController();
+    _currentIndex = 0;
+    _lastCardsPerView = cardsPerView;
+    _startAutoScroll(cardsPerView);
   }
 
-  void _startAutoScroll() {
+  void _startAutoScroll(int cardsPerView) {
+    _autoScrollTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (_pageController.hasClients) {
-        final nextPage = (_currentIndex + 1) % facts.length;
-        _pageController.animateToPage(
-          nextPage,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      }
+      if (!mounted || _pageController == null || !_pageController!.hasClients) return;
+      final totalPages = cardsPerView == 1 ? facts.length : (facts.length / cardsPerView).ceil();
+      final nextIndex = (_currentIndex + 1) % totalPages;
+      _pageController!.animateToPage(
+        nextIndex,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
     });
+  }
+  
+  void _stopAutoScroll() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = null;
   }
 
   @override
   void dispose() {
-    _autoScrollTimer?.cancel();
-    _pageController.dispose();
+    _stopAutoScroll();
+    _pageController?.dispose();
     super.dispose();
   }
 
@@ -193,45 +212,112 @@ class _DidYouKnowSectionState extends State<DidYouKnowSection> {
           const SizedBox(height: 28),
           
           // Fact Cards Carousel with Images
-          SizedBox(
-            height: 290,
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() => _currentIndex = index);
-              },
-              itemCount: facts.length,
-              itemBuilder: (context, index) {
-                final fact = facts[index];
-                final colors = _getFactColors(isDark);
-                return _FactCard(fact: fact, isDark: isDark, accentColor: colors[index]);
-              },
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = constraints.maxWidth;
+              // Determine cards per view based on width
+              int cardsPerView = 1;
+              if (screenWidth >= 1400) {
+                cardsPerView = 4;
+              } else if (screenWidth >= 1000) {
+                cardsPerView = 3;
+              } else if (screenWidth >= 700) {
+                cardsPerView = 2;
+              }
+              
+              // Initialize controller with current layout
+              _initializeController(cardsPerView);
+              
+              if (_pageController == null) return const SizedBox();
+              
+              return SizedBox(
+                height: 290,
+                child: cardsPerView == 1
+                    ? PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) {
+                          setState(() => _currentIndex = index);
+                        },
+                        itemCount: facts.length,
+                        itemBuilder: (context, index) {
+                          final fact = facts[index];
+                          final colors = _getFactColors(isDark);
+                          return _FactCard(fact: fact, isDark: isDark, accentColor: colors[index]);
+                        },
+                      )
+                    : PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) {
+                          setState(() => _currentIndex = index);
+                        },
+                        itemCount: (facts.length / cardsPerView).ceil(),
+                        itemBuilder: (context, pageIndex) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Row(
+                              children: List.generate(cardsPerView, (cardIndex) {
+                                final actualIndex = (pageIndex * cardsPerView) + cardIndex;
+                                if (actualIndex >= facts.length) {
+                                  return Expanded(child: SizedBox());
+                                }
+                                final fact = facts[actualIndex];
+                                final colors = _getFactColors(isDark);
+                                return Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: cardIndex == 0 ? 0 : (cardIndex == cardsPerView - 1 ? 0 : 4),
+                                    ),
+                                    child: _FactCard(fact: fact, isDark: isDark, accentColor: colors[actualIndex]),
+                                  ),
+                                );
+                              }),
+                            ),
+                          );
+                        },
+                      ),
+              );
+            },
           ),
           
           const SizedBox(height: 16),
           
           // Page Indicators
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(facts.length, (index) {
-              final isActive = index == _currentIndex;
-              final colors = _getFactColors(isDark);
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: isActive ? 24 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? colors[_currentIndex]
-                      : (isDark
-                          ? Colors.white.withValues(alpha: 0.2)
-                          : Colors.black.withValues(alpha: 0.1)),
-                  borderRadius: BorderRadius.circular(4),
-                ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = constraints.maxWidth;
+              int cardsPerView = 1;
+              if (screenWidth >= 1400) {
+                cardsPerView = 4;
+              } else if (screenWidth >= 1000) {
+                cardsPerView = 3;
+              } else if (screenWidth >= 700) {
+                cardsPerView = 2;
+              }
+              final totalPages = cardsPerView == 1 ? facts.length : (facts.length / cardsPerView).ceil();
+              
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(totalPages, (index) {
+                  final isActive = index == _currentIndex;
+                  final colors = _getFactColors(isDark);
+                  final colorIndex = cardsPerView == 1 ? _currentIndex : (_currentIndex * cardsPerView).clamp(0, colors.length - 1);
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: isActive ? 24 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? colors[colorIndex]
+                          : (isDark
+                              ? Colors.white.withValues(alpha: 0.2)
+                              : Colors.black.withValues(alpha: 0.1)),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  );
+                }),
               );
-            }),
+            },
           ),
         ],
       ),

@@ -17,22 +17,50 @@ class TimelineSection extends StatelessWidget {
         children: [
           _buildSectionHeader(isDark),
           const SizedBox(height: 16),
-          // Horizontal scrolling timeline
-          SizedBox(
-            height: 220,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: MoodiData.timeline.length,
-              itemBuilder: (context, index) {
-                return _TimelineCard(
-                  entry: MoodiData.timeline[index],
-                  index: index,
-                  isDark: isDark,
-                  isLast: index == MoodiData.timeline.length - 1,
+          // Responsive timeline layout
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = constraints.maxWidth;
+              // Use wrap layout on larger screens, horizontal scroll on smaller
+              if (screenWidth >= 1000) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: List.generate(MoodiData.timeline.length, (index) {
+                      return SizedBox(
+                        width: 200,
+                        height: 220,
+                        child: _TimelineCard(
+                          entry: MoodiData.timeline[index],
+                          index: index,
+                          isDark: isDark,
+                          isLast: index == MoodiData.timeline.length - 1,
+                        ),
+                      );
+                    }),
+                  ),
                 );
-              },
-            ),
+              } else {
+                return SizedBox(
+                  height: 220,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: MoodiData.timeline.length,
+                    itemBuilder: (context, index) {
+                      return _TimelineCard(
+                        entry: MoodiData.timeline[index],
+                        index: index,
+                        isDark: isDark,
+                        isLast: index == MoodiData.timeline.length - 1,
+                      );
+                    },
+                  ),
+                );
+              }
+            },
           ),
         ],
       ),

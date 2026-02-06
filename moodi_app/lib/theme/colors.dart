@@ -104,9 +104,9 @@ class MoodiColors {
     return isDark ? darkOrange : Color(0xFFD84000);
   }
   
-  /// Yellow/gold accent (replaces sunburstYellow)
+  /// Yellow/gold accent (replaces sunburstYellow) - Now uses blue in light mode
   static Color getYellowAccent(bool isDark) {
-    return isDark ? amberFlame : Color(0xFFB86F00); // Dark gold for light mode
+    return isDark ? amberFlame : Color(0xFF0C5BA0); // Blue for light mode
   }
   
   /// Red accent that works in both modes (replaces oxblood/blackCherry as text)
@@ -117,6 +117,11 @@ class MoodiColors {
   /// Orange accent for decorative elements
   static Color getOrangeAccent(bool isDark) {
     return isDark ? orange : Color(0xFFB85A00);
+  }
+  
+  /// Blue accent for time/date displays
+  static Color getBlueAccent(bool isDark) {
+    return isDark ? Color(0xFF4A9FF5) : Color(0xFF0C5BA0); // Bright blue for dark, deep blue for light
   }
 
   // ═══════════════════════════════════════════════════════════

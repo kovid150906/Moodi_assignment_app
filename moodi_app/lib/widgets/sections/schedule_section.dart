@@ -183,115 +183,149 @@ class _ScheduleSectionState extends State<ScheduleSection> {
           child: child,
         ),
       ),
-      child: Column(
+      child: LayoutBuilder(
         key: ValueKey(_selectedDay),
-        children: dayEvents.asMap().entries.map((entry) {
-          final index = entry.key;
-          final event = entry.value;
-          final isPronite = (event['title'] ?? '').toUpperCase().contains('PRONITE') ||
-              (event['title'] ?? '').toUpperCase().contains('HUMOR FEST');
-
-          return GestureDetector(
-            onTap: () => _showEventPopup(context, event, isDark, dayColor),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: isPronite
-                    ? dayColor.withAlpha(isDark ? 25 : 18)
-                    : (isDark ? MoodiColors.cardDark : MoodiColors.cardLight),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isPronite
-                      ? dayColor.withAlpha(60)
-                      : (isDark ? MoodiColors.elevatedDark : MoodiColors.elevatedLight),
-                ),
-                boxShadow: isPronite
-                    ? [BoxShadow(color: dayColor.withAlpha(30), blurRadius: 8)]
-                    : [],
+        builder: (context, constraints) {
+          final screenWidth = constraints.maxWidth;
+          // Use grid on larger screens
+          if (screenWidth >= 700) {
+            final crossAxisCount = screenWidth >= 1200 ? 3 : 2;
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 3.5,
               ),
-              child: Row(
+              itemCount: dayEvents.length,
+              itemBuilder: (context, index) {
+                final event = dayEvents[index];
+                return _buildEventCard(event, isDark, dayColor);
+              },
+            );
+          } else {
+            return Column(
+              children: dayEvents.map((event) {
+                return _buildEventCard(event, isDark, dayColor);
+              }).toList(),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildEventCard(Map<String, String> event, bool isDark, Color dayColor) {
+    final isPronite = (event['title'] ?? '').toUpperCase().contains('PRONITE') ||
+        (event['title'] ?? '').toUpperCase().contains('HUMOR FEST');
+    final isHumorFest = (event['title'] ?? '').toUpperCase().contains('HUMOR FEST');
+
+    return GestureDetector(
+      onTap: () => _showEventPopup(context, event, isDark, dayColor),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isPronite
+              ? dayColor.withAlpha(isDark ? 25 : 18)
+              : (isDark ? MoodiColors.cardDark : MoodiColors.cardLight),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isPronite
+                ? dayColor.withAlpha(60)
+                : (isDark ? MoodiColors.elevatedDark : MoodiColors.elevatedLight),
+          ),
+          boxShadow: isPronite
+              ? [BoxShadow(color: dayColor.withAlpha(30), blurRadius: 8)]
+              : [],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 52,
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+              decoration: BoxDecoration(
+                color: (isPronite ? dayColor : MoodiColors.azureBlue).withAlpha(20),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                event['time'] ?? '',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.spaceMono(
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  color: isPronite ? dayColor : MoodiColors.getBlueAccent(isDark),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 52,
-                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-                    decoration: BoxDecoration(
-                      color: (isPronite ? dayColor : MoodiColors.azureBlue).withAlpha(20),
-                      borderRadius: BorderRadius.circular(8),
+                  Text(
+                    event['title'] ?? '',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: isPronite ? FontWeight.bold : FontWeight.w500,
+                      color: (isHumorFest && !isDark)
+                          ? MoodiColors.getBlueAccent(isDark)
+                          : (isDark ? Colors.white : MoodiColors.textOnLight),
                     ),
-                    child: Text(
-                      event['time'] ?? '',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.spaceMono(
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                        color: isPronite ? dayColor : MoodiColors.azureBlue,
-                      ),
-                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          event['title'] ?? '',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: isPronite ? FontWeight.bold : FontWeight.w500,
-                            color: isDark ? Colors.white : MoodiColors.textOnLight,
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 10,
+                        color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight,
+                      ),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          event['venue'] ?? '',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 10,
-                              color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              event['venue'] ?? '',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  if (isPronite)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        gradient: MoodiColors.fireGradient,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'LIVE',
-                        style: GoogleFonts.spaceMono(
-                          fontSize: 7,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    )
-                  else
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight,
-                    ),
                 ],
               ),
-            ).animate().fadeIn(duration: 350.ms, delay: (index * 50).ms).slideX(begin: 0.08, curve: Curves.easeOut),
-          );
-        }).toList(),
+            ),
+            if (isPronite)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  gradient: MoodiColors.fireGradient,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'LIVE',
+                  style: GoogleFonts.spaceMono(
+                    fontSize: 7,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1,
+                  ),
+                ),
+              )
+            else
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -299,6 +333,7 @@ class _ScheduleSectionState extends State<ScheduleSection> {
   void _showEventPopup(BuildContext context, Map<String, String> event, bool isDark, Color accentColor) {
     final isPronite = (event['title'] ?? '').toUpperCase().contains('PRONITE') ||
         (event['title'] ?? '').toUpperCase().contains('HUMOR FEST');
+    final isHumorFest = (event['title'] ?? '').toUpperCase().contains('HUMOR FEST');
 
     showDialog(
       context: context,
@@ -345,7 +380,9 @@ class _ScheduleSectionState extends State<ScheduleSection> {
                               style: GoogleFonts.poppins(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : MoodiColors.textOnLight,
+                                color: (isHumorFest && !isDark)
+                                  ? MoodiColors.getBlueAccent(isDark)
+                                  : (isDark ? Colors.white : MoodiColors.textOnLight),
                               ),
                             ),
                             if (isPronite)

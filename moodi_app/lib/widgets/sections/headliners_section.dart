@@ -16,40 +16,59 @@ class HeadlinersSection extends StatefulWidget {
 }
 
 class _HeadlinersSectionState extends State<HeadlinersSection> {
-  late final PageController _pageController;
+  PageController? _pageController;
   Timer? _autoSlideTimer;
   int _currentPage = 0;
+  int _lastCardsPerView = 1;
   static const int _infiniteMultiplier = 10000;
   static const int _startingPage = 5000;
 
   @override
   void initState() {
     super.initState();
+    // PageController will be created in build based on screen width
+  }
+
+  void _initializeController(int cardsPerView) {
+    if (_lastCardsPerView == cardsPerView && _pageController != null) return;
+    
+    _stopAutoSlide();
+    _pageController?.dispose();
+    
     final totalHeadliners = MoodiData.headliners.length;
+    final pagesPerCycle = cardsPerView == 1 ? totalHeadliners : (totalHeadliners / cardsPerView).ceil();
+    
     _pageController = PageController(
-      viewportFraction: 0.85,
-      initialPage: _startingPage * totalHeadliners,
+      viewportFraction: cardsPerView == 1 ? 0.85 : 1.0,
+      initialPage: _startingPage * pagesPerCycle,
     );
-    _currentPage = _startingPage * totalHeadliners;
+    _currentPage = _pageController!.initialPage;
+    _lastCardsPerView = cardsPerView;
     _startAutoSlide();
   }
 
   void _startAutoSlide() {
+    _autoSlideTimer?.cancel();
     _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted) return;
+      if (!mounted || _pageController == null) return;
       _currentPage++;
-      _pageController.animateToPage(
+      _pageController!.animateToPage(
         _currentPage,
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeInOutCubic,
       );
     });
   }
+  
+  void _stopAutoSlide() {
+    _autoSlideTimer?.cancel();
+    _autoSlideTimer = null;
+  }
 
   @override
   void dispose() {
-    _autoSlideTimer?.cancel();
-    _pageController.dispose();
+    _stopAutoSlide();
+    _pageController?.dispose();
     super.dispose();
   }
 
@@ -102,6 +121,23 @@ class _HeadlinersSectionState extends State<HeadlinersSection> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Determine number of cards to show based on screen width
+    int cardsPerView = 1;
+    if (screenWidth >= 1400) {
+      cardsPerView = 4;
+    } else if (screenWidth >= 1000) {
+      cardsPerView = 3;
+    } else if (screenWidth >= 700) {
+      cardsPerView = 2;
+    }
+    
+    // Initialize controller with current layout
+    _initializeController(cardsPerView);
+    
+    if (_pageController == null) return const SliverToBoxAdapter(child: SizedBox());
+    
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,37 +145,72 @@ class _HeadlinersSectionState extends State<HeadlinersSection> {
           _buildSectionHeader(isDark),
           const SizedBox(height: 12),
           // Page indicator
-          _buildPageIndicator(isDark),
+          _buildPageIndicator(isDark, cardsPerView),
           const SizedBox(height: 8),
           SizedBox(
             height: 340,
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (i) => setState(() => _currentPage = i),
-              itemCount: MoodiData.headliners.length * _infiniteMultiplier,
-              itemBuilder: (context, index) {
-                final actualIndex = index % MoodiData.headliners.length;
-                return GestureDetector(
-                  onTap: () => _showHeadlinerPopup(context, MoodiData.headliners[actualIndex], actualIndex),
-                  child: _HeadlinerCard(
-                    headliner: MoodiData.headliners[actualIndex],
-                    index: actualIndex,
-                    isDark: isDark,
+            child: cardsPerView == 1
+                ? PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (i) => setState(() => _currentPage = i),
+                    itemCount: MoodiData.headliners.length * _infiniteMultiplier,
+                    itemBuilder: (context, index) {
+                      final actualIndex = index % MoodiData.headliners.length;
+                      return GestureDetector(
+                        onTap: () => _showHeadlinerPopup(context, MoodiData.headliners[actualIndex], actualIndex),
+                        child: _HeadlinerCard(
+                          headliner: MoodiData.headliners[actualIndex],
+                          index: actualIndex,
+                          isDark: isDark,
+                        ),
+                      );
+                    },
+                  )
+                : PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (i) => setState(() => _currentPage = i),
+                    itemCount: (MoodiData.headliners.length / cardsPerView).ceil() * _infiniteMultiplier,
+                    itemBuilder: (context, pageIndex) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Row(
+                          children: List.generate(cardsPerView, (cardIndex) {
+                            final actualIndex = ((pageIndex * cardsPerView) + cardIndex) % MoodiData.headliners.length;
+                            return Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: cardIndex == 0 ? 0 : (cardIndex == cardsPerView - 1 ? 0 : 4),
+                                ),
+                                child: GestureDetector(
+                                  onTap: () => _showHeadlinerPopup(context, MoodiData.headliners[actualIndex], actualIndex),
+                                  child: _HeadlinerCard(
+                                    headliner: MoodiData.headliners[actualIndex],
+                                    index: actualIndex,
+                                    isDark: isDark,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPageIndicator(bool isDark) {
-    final actualPage = _currentPage % MoodiData.headliners.length;
+  Widget _buildPageIndicator(bool isDark, int cardsPerView) {
+    final totalHeadliners = MoodiData.headliners.length;
+    final totalPages = cardsPerView == 1 ? totalHeadliners : (totalHeadliners / cardsPerView).ceil();
+    final actualPage = cardsPerView == 1 
+        ? _currentPage % totalHeadliners
+        : (_currentPage % totalPages);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(MoodiData.headliners.length, (i) {
+      children: List.generate(totalPages, (i) {
         final isActive = i == actualPage;
         final colors = [MoodiColors.hotPink, MoodiColors.neonCyan, MoodiColors.getYellowAccent(isDark), MoodiColors.limeGreen];
         return AnimatedContainer(
