@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../theme/colors.dart';
 
 class AftermovieSection extends StatefulWidget {
@@ -13,38 +13,27 @@ class AftermovieSection extends StatefulWidget {
 
 class _AftermovieSectionState extends State<AftermovieSection> {
   bool _isExpanded = false;
-  YoutubePlayerController? _controller;
-  int _playerKey = 0;
+  late YoutubePlayerController _controller;
 
-  void _initializeController() {
-    // Dispose old controller if exists
-    _controller?.close();
-    
-    // Create fresh controller with new key
-    _playerKey++;
-    _controller = YoutubePlayerController.fromVideoId(
-      videoId: 'WeKGUKuqWaY',
-      autoPlay: false,
-      params: const YoutubePlayerParams(
-        showControls: true,
-        showFullscreenButton: true,
+  @override
+  void initState() {
+    super.initState();
+    _controller = YoutubePlayerController(
+      initialVideoId: 'WeKGUKuqWaY',
+      flags: const YoutubePlayerFlags(
+        autoPlay: false,
         mute: false,
         loop: false,
+        hideControls: false,
+        controlsVisibleAtStart: true,
         enableCaption: false,
-        strictRelatedVideos: true,
-        origin: 'https://www.youtube.com',
       ),
     );
   }
 
-  void _disposeController() {
-    _controller?.close();
-    _controller = null;
-  }
-
   @override
   void dispose() {
-    _disposeController();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -75,15 +64,13 @@ class _AftermovieSectionState extends State<AftermovieSection> {
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
             child: Column(
               children: [
-            // Collapsible header
-            InkWell(
+                // Collapsible header
+                InkWell(
               onTap: () {
                 setState(() {
                   _isExpanded = !_isExpanded;
-                  if (_isExpanded) {
-                    _initializeController();
-                  } else {
-                    _disposeController();
+                  if (!_isExpanded) {
+                    _controller.pause();
                   }
                 });
               },
@@ -193,14 +180,14 @@ class _AftermovieSectionState extends State<AftermovieSection> {
                   ],
                 ),
               ),
-            ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
-            
-            // Expandable video player
-            AnimatedSize(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-              child: _isExpanded && _controller != null
-                  ? Container(
+                ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
+                
+                // Expandable video player
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                  child: _isExpanded
+                      ? Container(
                       margin: EdgeInsets.only(top: isMobile ? 12.0 : 16.0),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(isMobile ? 12.0 : 16.0),
@@ -215,20 +202,21 @@ class _AftermovieSectionState extends State<AftermovieSection> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(isMobile ? 12.0 : 16.0),
-                        child: AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: YoutubePlayer(
-                            key: ValueKey(_playerKey),
-                            controller: _controller!,
-                            aspectRatio: 16 / 9,
+                        child: YoutubePlayer(
+                          controller: _controller,
+                          showVideoProgressIndicator: true,
+                          progressIndicatorColor: MoodiColors.hotPink,
+                          progressColors: ProgressBarColors(
+                            playedColor: MoodiColors.hotPink,
+                            handleColor: MoodiColors.neonCyan,
                           ),
                         ),
                       ),
                     )
-                  : const SizedBox.shrink(),
+                      : const SizedBox.shrink(),
+                ),
+              ],
             ),
-          ],
-        ),
           ),
         ),
       ),
