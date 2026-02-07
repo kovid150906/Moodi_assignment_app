@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../theme/colors.dart';
 import '../../data/moodi_data.dart';
 import '../../models/event_models.dart';
@@ -247,10 +248,10 @@ class _HeadlinersSectionState extends State<HeadlinersSection> {
             children: [
               Text(
                 'HEADLINERS',
-                style: GoogleFonts.bebasNeue(
-                  fontSize: 26, fontWeight: FontWeight.w600,
+                style: GoogleFonts.anton(
+                  fontSize: 26, fontWeight: FontWeight.w400,
                   color: isDark ? MoodiColors.textOnDark : MoodiColors.textOnLight,
-                  letterSpacing: 3,
+                  letterSpacing: 2,
                   height: 1.1,
                 ),
               ),
@@ -521,6 +522,51 @@ class _HeadlinerPopup extends StatelessWidget {
                           const SizedBox(width: 10),
                           _infoChip(Icons.access_time_rounded, headliner.time, gradient),
                         ],
+                      ),
+                      const SizedBox(height: 10),
+                      // Venue chip
+                      _infoChip(Icons.location_on_rounded, headliner.venue, gradient),
+                      const SizedBox(height: 16),
+                      // Get Directions button
+                      InkWell(
+                        onTap: () async {
+                          final uri = Uri.parse(headliner.mapsUrl);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            gradient: gradient,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: gradient.colors[0].withAlpha(80),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.directions_rounded, color: Colors.white, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'GET DIRECTIONS',
+                                style: GoogleFonts.bebasNeue(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 20),
                       Container(

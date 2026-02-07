@@ -16,6 +16,7 @@ dependencies:
   url_launcher: ^6.3.1
   flutter_staggered_animations: ^1.1.1
   animated_text_kit: ^4.2.2
+  youtube_player_iframe: ^5.2.0
 
 dev_dependencies:
   flutter_test:
@@ -27,4 +28,5 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/team/
     - assets/icons/

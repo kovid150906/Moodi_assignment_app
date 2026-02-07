@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../theme/colors.dart';
 import '../../data/moodi_data.dart';
 import '../../models/event_models.dart';
 
-class EventCategoriesSection extends StatelessWidget {
+class EventCategoriesSection extends StatefulWidget {
   const EventCategoriesSection({super.key});
+
+  @override
+  State<EventCategoriesSection> createState() => _EventCategoriesSectionState();
+}
+
+class _EventCategoriesSectionState extends State<EventCategoriesSection> {
+  bool _isExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -18,8 +26,21 @@ class EventCategoriesSection extends StatelessWidget {
         children: [
           _buildSectionHeader(isDark),
           const SizedBox(height: 16),
-          // Responsive grid of category cards
-          LayoutBuilder(
+          // Collapsible content
+          AnimatedSize(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+            child: _isExpanded
+                ? _buildCategoriesGrid(isDark)
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoriesGrid(bool isDark) {
+    return LayoutBuilder(
             builder: (context, constraints) {
               final screenWidth = constraints.maxWidth;
               // Determine column count based on screen width
@@ -65,44 +86,54 @@ class EventCategoriesSection extends StatelessWidget {
                 ),
               );
             },
-          ),
-        ],
-      ),
-    );
+          );
   }
 
   Widget _buildSectionHeader(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Container(
-            width: 4, height: 28,
-            decoration: BoxDecoration(
-              gradient: MoodiColors.neonNightGradient,
-              borderRadius: BorderRadius.circular(2),
+    return GestureDetector(
+      onTap: () => setState(() => _isExpanded = !_isExpanded),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          children: [
+            Container(
+              width: 4, height: 28,
+              decoration: BoxDecoration(
+                gradient: MoodiColors.neonNightGradient,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'EVENTS',
-                style: GoogleFonts.spaceMono(
-                  fontSize: 20, fontWeight: FontWeight.bold,
-                  color: isDark ? MoodiColors.textOnDark : MoodiColors.textOnLight,
-                  letterSpacing: 3,
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'EVENTS',
+                  style: GoogleFonts.anton(
+                    fontSize: 22, fontWeight: FontWeight.w400,
+                    color: isDark ? MoodiColors.textOnDark : MoodiColors.textOnLight,
+                    letterSpacing: 2,
+                  ),
                 ),
+                Text(
+                  _isExpanded ? 'Tap to collapse' : 'Tap to explore',
+                  style: GoogleFonts.inter(fontSize: 12, color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight),
+                ),
+              ],
+            ),
+            const Spacer(),
+            AnimatedRotation(
+              turns: _isExpanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 300),
+              child: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: isDark ? MoodiColors.textOnDark : MoodiColors.textOnLight,
+                size: 28,
               ),
-              Text(
-                'Tap to explore',
-                style: GoogleFonts.inter(fontSize: 12, color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight),
-              ),
-            ],
-          ),
-        ],
-      ).animate().fadeIn(duration: 500.ms).slideX(begin: -0.1),
+            ),
+          ],
+        ).animate().fadeIn(duration: 500.ms).slideX(begin: -0.1),
+      ),
     );
   }
 }
@@ -297,9 +328,43 @@ class _EventCard extends StatelessWidget {
 
   const _EventCard({required this.event, required this.color, required this.isDark, required this.index});
 
+  void _showEventDetail(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      barrierColor: Colors.black.withAlpha(150),
+      builder: (ctx) => GestureDetector(
+        onTap: () => Navigator.of(ctx).pop(),
+        behavior: HitTestBehavior.opaque,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => Navigator.of(ctx).pop(),
+                child: Container(color: Colors.transparent),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: GestureDetector(
+                onTap: () {},
+                child: _EventDetailSheet(event: event, color: color, isDark: isDark),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () => _showEventDetail(context),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -340,9 +405,29 @@ class _EventCard extends StatelessWidget {
               )).toList(),
             ),
           ],
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withAlpha(20),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: color.withAlpha(60)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Tap for details', style: GoogleFonts.inter(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 4),
+                  Icon(Icons.arrow_forward_rounded, size: 12, color: color),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms, delay: (index * 80).ms).slideY(begin: 0.1);
+    ).animate().fadeIn(duration: 400.ms, delay: (index * 80).ms).slideY(begin: 0.1));
   }
 
   Widget _infoChip(IconData icon, String text) {
@@ -352,6 +437,264 @@ class _EventCard extends StatelessWidget {
         Icon(icon, size: 11, color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight),
         const SizedBox(width: 4),
         Flexible(child: Text(text, style: GoogleFonts.inter(fontSize: 10, color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
+      ],
+    );
+  }
+}
+
+/// Detailed event information popup
+class _EventDetailSheet extends StatelessWidget {
+  final Event event;
+  final Color color;
+  final bool isDark;
+
+  const _EventDetailSheet({required this.event, required this.color, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      maxChildSize: 0.95,
+      minChildSize: 0.5,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? MoodiColors.cardDark : MoodiColors.surfaceLight,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withAlpha(60) : Colors.black.withAlpha(30),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Event image if available
+                      if (event.imageUrl.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            event.imageUrl,
+                            height: 180,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              height: 180,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [color.withAlpha(40), color.withAlpha(20)],
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(Icons.event, size: 60, color: color.withAlpha(100)),
+                            ),
+                          ),
+                        ),
+                      if (event.imageUrl.isNotEmpty) const SizedBox(height: 16),
+                      // Event title
+                      Text(
+                        event.title,
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : MoodiColors.textOnLight,
+                        ),
+                      ),
+                      if (event.subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          event.subtitle,
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            color: color,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      // Event details
+                      _buildDetailRow(Icons.calendar_today_rounded, 'Date', event.date),
+                      const SizedBox(height: 12),
+                      _buildDetailRow(Icons.access_time_rounded, 'Time', event.time),
+                      const SizedBox(height: 12),
+                      _buildDetailRow(Icons.location_on_rounded, 'Venue', event.venue),
+                      const SizedBox(height: 20),
+                      // Directions button
+                      InkWell(
+                        onTap: () async {
+                          final uri = Uri.parse(event.mapsUrl);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [color, color.withAlpha(180)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withAlpha(60),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.directions_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Get Directions',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Divider
+                      Container(
+                        height: 1,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.transparent,
+                              color.withAlpha(60),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Description
+                      Text(
+                        'About',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : MoodiColors.textOnLight,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        event.description,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: isDark ? MoodiColors.textSecondaryDark : MoodiColors.textSecondaryLight,
+                          height: 1.6,
+                        ),
+                      ),
+                      // Tags
+                      if (event.tags.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        Text(
+                          'Tags',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : MoodiColors.textOnLight,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: event.tags.map((tag) => Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: color.withAlpha(20),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: color.withAlpha(60)),
+                            ),
+                            child: Text(
+                              '#$tag',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: color,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )).toList(),
+                        ),
+                      ],
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color.withAlpha(20),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 20, color: color),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: isDark ? Colors.white : MoodiColors.textOnLight,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

@@ -186,7 +186,7 @@ class SponsorsSection extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('SPONSORS', style: GoogleFonts.spaceMono(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? MoodiColors.textOnDark : MoodiColors.textOnLight, letterSpacing: 3)),
+              Text('SPONSORS', style: GoogleFonts.anton(fontSize: 22, fontWeight: FontWeight.w400, color: isDark ? MoodiColors.textOnDark : MoodiColors.textOnLight, letterSpacing: 2)),
               Text('Powered by visionaries', style: GoogleFonts.inter(fontSize: 12, color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight)),
             ],
           ),

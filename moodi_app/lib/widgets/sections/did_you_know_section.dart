@@ -181,9 +181,9 @@ class _DidYouKnowSectionState extends State<DidYouKnowSection> {
                     children: [
                       Text(
                         'DID YOU KNOW?',
-                        style: GoogleFonts.bebasNeue(
+                        style: GoogleFonts.anton(
                           fontSize: 26,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 2,
                           color: isDark
                               ? MoodiColors.textOnDark

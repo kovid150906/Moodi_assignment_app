@@ -85,10 +85,10 @@ class TimelineSection extends StatelessWidget {
             children: [
               Text(
                 'OUR LEGACY',
-                style: GoogleFonts.spaceMono(
-                  fontSize: 20, fontWeight: FontWeight.bold,
+                style: GoogleFonts.anton(
+                  fontSize: 22, fontWeight: FontWeight.w400,
                   color: isDark ? MoodiColors.textOnDark : MoodiColors.textOnLight,
-                  letterSpacing: 3,
+                  letterSpacing: 2,
                 ),
               ),
               Text(
@@ -110,6 +110,38 @@ class _TimelineCard extends StatelessWidget {
   final bool isLast;
 
   const _TimelineCard({required this.entry, required this.index, required this.isDark, required this.isLast});
+
+  void _showTimelineDetail(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      barrierColor: Colors.black.withAlpha(150),
+      builder: (ctx) => GestureDetector(
+        onTap: () => Navigator.of(ctx).pop(),
+        behavior: HitTestBehavior.opaque,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => Navigator.of(ctx).pop(),
+                child: Container(color: Colors.transparent),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: GestureDetector(
+                onTap: () {},
+                child: _TimelineDetailSheet(entry: entry, isDark: isDark),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -170,22 +202,27 @@ class _TimelineCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              // Year label
-              ShaderMask(
-                shaderCallback: (bounds) => gradient.createShader(bounds),
-                child: Text(
-                  entry.year,
-                  style: GoogleFonts.spaceMono(
-                    fontSize: isCurrent ? 22 : 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+              // Year label - fixed visibility
+              Text(
+                entry.year,
+                style: GoogleFonts.spaceMono(
+                  fontSize: isCurrent ? 22 : 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                  shadows: [
+                    Shadow(
+                      color: color.withAlpha(40),
+                      blurRadius: 8,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),
-              // Card
+              // Card - now tappable
               Expanded(
-                child: Container(
+                child: GestureDetector(
+                  onTap: () => _showTimelineDetail(context),
+                  child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -230,6 +267,7 @@ class _TimelineCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                ),
               ),
             ],
           ),
@@ -237,5 +275,164 @@ class _TimelineCard extends StatelessWidget {
         if (!isLast) const SizedBox(width: 4),
       ],
     ).animate().fadeIn(duration: 500.ms, delay: (index * 100).ms).slideX(begin: 0.15, curve: Curves.easeOutCubic);
+  }
+}
+
+/// Detailed timeline information popup
+class _TimelineDetailSheet extends StatelessWidget {
+  final TimelineEntry entry;
+  final bool isDark;
+
+  const _TimelineDetailSheet({required this.entry, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = [
+      MoodiColors.neonCyan,
+      MoodiColors.electricPurple,
+      MoodiColors.hotPink,
+      MoodiColors.getYellowAccent(isDark),
+      MoodiColors.limeGreen,
+      MoodiColors.deepOrange,
+      MoodiColors.gold,
+      MoodiColors.coral,
+    ];
+    final color = colors[int.parse(entry.year) % colors.length];
+    
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      maxChildSize: 0.85,
+      minChildSize: 0.4,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? MoodiColors.cardDark : MoodiColors.surfaceLight,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withAlpha(60) : Colors.black.withAlpha(30),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Year badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: color.withAlpha(20),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: color.withAlpha(60)),
+                        ),
+                        child: Text(
+                          entry.year,
+                          style: GoogleFonts.spaceMono(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Icon
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: color.withAlpha(20),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Icon(entry.icon, size: 30, color: color),
+                      ),
+                      const SizedBox(height: 16),
+                      // Title
+                      Text(
+                        entry.title,
+                        style: GoogleFonts.poppins(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : MoodiColors.textOnLight,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Divider
+                      Container(
+                        height: 2,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.transparent,
+                              color.withAlpha(80),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Description
+                      Text(
+                        entry.description,
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          color: isDark ? MoodiColors.textSecondaryDark : MoodiColors.textSecondaryLight,
+                          height: 1.7,
+                        ),
+                      ),
+                      if (entry.year == '2025') ...[
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                color.withAlpha(30),
+                                color.withAlpha(10),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: color.withAlpha(60)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.celebration_rounded, color: color, size: 24),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Current Edition - Join us this year!',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: color,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

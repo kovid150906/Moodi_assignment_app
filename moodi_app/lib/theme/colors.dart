@@ -6,17 +6,22 @@ import 'package:flutter/material.dart';
 class MoodiColors {
   MoodiColors._();
 
-  // Dark Mode Primary - Deep night tones
-  static const Color primaryDark = Color(0xFF03071E);
-  static const Color surfaceDark = Color(0xFF370617);
-  static const Color cardDark = Color(0xFF4D0812);
-  static const Color elevatedDark = Color(0xFF6A040F);
+  // Dark Mode Primary - Deep dark grey tones (replaced red with grey)
+  static const Color primaryDark = Color(0xFF0A0A0A);
+  static const Color surfaceDark = Color(0xFF1A1A1A);
+  static const Color cardDark = Color(0xFFC77DFF); // Purple card color for dark mode
+  static const Color elevatedDark = Color(0xFFB366E8); // Slightly darker purple for gradient
 
   // Light Mode Primary - Warm amber tones
   static const Color primaryLight = Color(0xFFFFF9F0);
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color cardLight = Color(0xFFFFF3E8);
   static const Color elevatedLight = Color(0xFFFFEDD6);
+
+  // Footer Colors
+  static const Color footerDark = Color(0xFFEDF2FB);
+  static const Color footerTextColor = Color(0xFF720026);
+  static const Color moodiOrange = Color(0xFFFF6D00);
 
   // ═══════════════════════════════════════════════════════════
   // PRIMARY PALETTE - Fiery Red Sunset (10 colors)
@@ -73,14 +78,14 @@ class MoodiColors {
   static const Color mintGreen = orange;
   static const Color shockPink = brickEmber;
 
-  // Text Colors - Fire-inspired
+  // Text Colors - Updated for better visibility
   static const Color textOnDark = Color(0xFFFFFFFF);
   static const Color textSecondaryDark = Color(0xFFFFDDCC);
   static const Color textMutedDark = Color(0xFFFFAA88);
 
-  static const Color textOnLight = Color(0xFF03071E);
-  static const Color textSecondaryLight = Color(0xFF6A040F);
-  static const Color textMutedLight = Color(0xFF9D0208);
+  static const Color textOnLight = Color(0xFF1A1A1A); // Near black - very visible
+  static const Color textSecondaryLight = Color(0xFF3D3D3D); // Dark grey - visible
+  static const Color textMutedLight = Color(0xFF5A5A5A); // Medium grey - visible
 
   // Status
   static const Color live = brickEmber;
@@ -125,19 +130,19 @@ class MoodiColors {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // GRADIENTS - Fiery transitions from night to golden flame
+  // GRADIENTS - Deep grey tones for dark mode
   // ═══════════════════════════════════════════════════════════
 
-  /// Hero section dark - deep night embers
+  /// Hero section dark - deep grey (no red)
   static const LinearGradient heroGradientDark = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      inkBlack,
-      nightBordeaux,
-      Color(0xFF4D0A13),
-      blackCherry,
-      nightBordeaux,
+      Color(0xFF0A0A0A),
+      Color(0xFF1A1A1A),
+      Color(0xFF252525),
+      Color(0xFF1A1A1A),
+      Color(0xFF0A0A0A),
     ],
     stops: [0.0, 0.25, 0.5, 0.75, 1.0],
   );

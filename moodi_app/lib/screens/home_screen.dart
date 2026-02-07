@@ -6,11 +6,15 @@ import '../widgets/sections/headliners_section.dart';
 import '../widgets/sections/did_you_know_section.dart';
 import '../widgets/sections/event_categories.dart';
 import '../widgets/sections/schedule_section.dart';
+import '../widgets/sections/aftermovie_section.dart';
 import '../widgets/sections/timeline_section.dart';
 import '../widgets/sections/sponsors_section.dart';
 import '../widgets/sections/footer_section.dart';
+import '../widgets/sections/eateries_section.dart';
+import '../widgets/sections/shops_spots_section.dart';
+import '../widgets/sections/team_section.dart';
+import '../widgets/sections/medical_section.dart';
 import '../widgets/common/dividers.dart';
-import '../widgets/common/texture_overlay.dart';
 
 class MoodiHomeScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -74,12 +78,12 @@ class _MoodiHomeScreenState extends State<MoodiHomeScreen> {
             end: Alignment.bottomRight,
             colors: isDark
                 ? [
-                    const Color(0xFF000000), // Pure black
-                    const Color(0xFF0A0001), // Almost black with red tint
-                    const Color(0xFF1A0003), // Very dark red
-                    const Color(0xFF2D0005), // Deep black-red
-                    const Color(0xFF1A0003), // Very dark red
-                    const Color(0xFF000000), // Pure black
+                    const Color(0xFF0A0A0A), // Pure dark grey
+                    const Color(0xFF121212), // Slightly lighter grey
+                    const Color(0xFF1A1A1A), // Dark grey
+                    const Color(0xFF252525), // Medium dark grey
+                    const Color(0xFF1A1A1A), // Dark grey
+                    const Color(0xFF0A0A0A), // Pure dark grey
                   ]
                 : [
                     const Color(0xFFFFF9F0), // Soft cream
@@ -94,13 +98,6 @@ class _MoodiHomeScreenState extends State<MoodiHomeScreen> {
         ),
         child: Stack(
           children: [
-            // Texture overlay for depth
-            TextureOverlay(opacity: isDark ? 0.08 : 0.05),
-            // Geometric pattern
-            GeometricPattern(
-              color: isDark ? MoodiColors.brickEmber : const Color(0xFF9D0208),
-              opacity: isDark ? 0.03 : 0.02,
-            ),
             // Main content
             CustomScrollView(
             controller: _scrollController,
@@ -127,11 +124,34 @@ class _MoodiHomeScreenState extends State<MoodiHomeScreen> {
               const SectionDivider(),
               const GradientDivider(gradient: MoodiColors.auroraGradient),
               const SectionDivider(height: 12),
+              // Medical Facilities
+              const MedicalSection(),
+              const SectionDivider(),
+              // Eateries Section
+              const EateriesSection(),
+              const SectionDivider(),
+              const GradientDivider(gradient: LinearGradient(
+                colors: [MoodiColors.limeGreen, MoodiColors.blazeOrange],
+              )),
+              const SectionDivider(height: 12),
+              // Shops and Famous Spots
+              const ShopsAndSpotsSection(),
+              const SectionDivider(),
+              const GradientDivider(gradient: MoodiColors.auroraGradient),
+              const SectionDivider(height: 12),
+              // Aftermovie section (collapsible YouTube player)
+              const AftermovieSection(),
+              const SectionDivider(height: 12),
               const TimelineSection(),
               const SectionDivider(),
               const GradientDivider(gradient: MoodiColors.sunsetGradient),
               const SectionDivider(height: 12),
               const SponsorsSection(),
+              const SectionDivider(),
+              const GradientDivider(gradient: MoodiColors.fireGradient),
+              const SectionDivider(height: 12),
+              // Team Section
+              const TeamSection(),
               const SectionDivider(),
               const FooterSection(),
               // Bottom safe area padding

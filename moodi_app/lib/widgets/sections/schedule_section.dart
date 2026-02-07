@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../theme/colors.dart';
 import '../../data/moodi_data.dart';
 
@@ -13,6 +14,7 @@ class ScheduleSection extends StatefulWidget {
 
 class _ScheduleSectionState extends State<ScheduleSection> {
   int _selectedDay = 0;
+  bool _isExpanded = false;
 
   final List<Color> dayColors = [
     MoodiColors.neonPink,
@@ -30,49 +32,68 @@ class _ScheduleSectionState extends State<ScheduleSection> {
         children: [
           _buildSectionHeader(isDark),
           const SizedBox(height: 16),
-          _buildScheduleLayout(isDark),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+            child: _isExpanded
+                ? _buildScheduleLayout(isDark)
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildSectionHeader(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 28,
-            decoration: BoxDecoration(
-              gradient: MoodiColors.auroraGradient,
-              borderRadius: BorderRadius.circular(2),
+    return GestureDetector(
+      onTap: () => setState(() => _isExpanded = !_isExpanded),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 28,
+              decoration: BoxDecoration(
+                gradient: MoodiColors.auroraGradient,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'SCHEDULE',
-                style: GoogleFonts.spaceMono(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? MoodiColors.textOnDark : MoodiColors.textOnLight,
-                  letterSpacing: 3,
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'SCHEDULE',
+                  style: GoogleFonts.anton(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w400,
+                    color: isDark ? MoodiColors.textOnDark : MoodiColors.textOnLight,
+                    letterSpacing: 2,
+                  ),
                 ),
-              ),
-              Text(
-                'December 15-18, 2025',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight,
+                Text(
+                  _isExpanded ? 'Tap to collapse' : 'December 15-18, 2025',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: isDark ? MoodiColors.textMutedDark : MoodiColors.textMutedLight,
+                  ),
                 ),
+              ],
+            ),
+            const Spacer(),
+            AnimatedRotation(
+              turns: _isExpanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 300),
+              child: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: isDark ? MoodiColors.textOnDark : MoodiColors.textOnLight,
+                size: 28,
               ),
-            ],
-          ),
-        ],
-      ).animate().fadeIn(duration: 500.ms).slideX(begin: -0.1),
+            ),
+          ],
+        ).animate().fadeIn(duration: 500.ms).slideX(begin: -0.1),
+      ),
     );
   }
 
@@ -171,7 +192,7 @@ class _ScheduleSectionState extends State<ScheduleSection> {
   }
 
   Widget _buildEventsList(bool isDark) {
-    final dayEvents = MoodiData.schedule[_selectedDay]['events'] as List<Map<String, String>>;
+    final dayEvents = MoodiData.schedule[_selectedDay]['events'] as List<Map<String, dynamic>>;
     final dayColor = dayColors[_selectedDay % dayColors.length];
 
     return AnimatedSwitcher(
@@ -217,7 +238,7 @@ class _ScheduleSectionState extends State<ScheduleSection> {
     );
   }
 
-  Widget _buildEventCard(Map<String, String> event, bool isDark, Color dayColor) {
+  Widget _buildEventCard(Map<String, dynamic> event, bool isDark, Color dayColor) {
     final isPronite = (event['title'] ?? '').toUpperCase().contains('PRONITE') ||
         (event['title'] ?? '').toUpperCase().contains('HUMOR FEST');
     final isHumorFest = (event['title'] ?? '').toUpperCase().contains('HUMOR FEST');
@@ -330,7 +351,7 @@ class _ScheduleSectionState extends State<ScheduleSection> {
     );
   }
 
-  void _showEventPopup(BuildContext context, Map<String, String> event, bool isDark, Color accentColor) {
+  void _showEventPopup(BuildContext context, Map<String, dynamic> event, bool isDark, Color accentColor) {
     final isPronite = (event['title'] ?? '').toUpperCase().contains('PRONITE') ||
         (event['title'] ?? '').toUpperCase().contains('HUMOR FEST');
     final isHumorFest = (event['title'] ?? '').toUpperCase().contains('HUMOR FEST');
@@ -422,6 +443,52 @@ class _ScheduleSectionState extends State<ScheduleSection> {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  // Get Directions button
+                  if (event['mapsUrl'] != null)
+                    Center(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final uri = Uri.parse(event['mapsUrl'] as String);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [accentColor, accentColor.withAlpha(180)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accentColor.withAlpha(60),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.directions_rounded, color: Colors.white, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                'GET DIRECTIONS',
+                                style: GoogleFonts.spaceMono(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (event['mapsUrl'] != null) const SizedBox(height: 16),
                   Center(
                     child: GestureDetector(
                       onTap: () => Navigator.of(ctx).pop(),
